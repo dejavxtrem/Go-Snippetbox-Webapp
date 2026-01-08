@@ -3,13 +3,26 @@ package main
 import (
 	"database/sql" // New import
 	"flag"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
+
+	// Import the models package that we just created. You need to prefix this with
+	// whatever module path you set up back in chapter 02.01 (Project Setup and Creating
+	// a Module) so that the import statement looks like this:
+	// "{your-module-path}/internal/models". If you can't remember what module path you
+	// used, you can find it at the top of the go.mod file.
+	"github.com/dejavxtrem/snippetbox/internal/models"
+	_ "github.com/go-sql-driver/mysql"
 )
 
+// Add a snippets field to the application struct. This will allow us to
+// use the SnippetModel type in our handlers.
 type application struct {
-	logger *slog.Logger
+	logger        *slog.Logger
+	snippet       *models.SnippetModel
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -18,6 +31,7 @@ func main() {
 	// and some short help text explaining what the flag controls. The value of the
 	// flag will be stored in the addr variable at runtime.
 	addr := flag.String("addr", ":4000", "HTTP network address")
+	// data source name(dsn)
 	dsn := flag.String("dsn", "web:password@/snippetbox?parseTime=true", "MySQL data source name")
 
 	// Importantly, we use the flag.Parse() function to parse the command-line flag.
@@ -31,6 +45,13 @@ func main() {
 	// writes to the standard out stream and uses the default settings.
 	//logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	// Initialize a new template cache...
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 
 	// To keep the main() function tidy I've put the code for creating a connection
 	// pool into the separate openDB() function below. We pass openDB() the DSN
@@ -48,7 +69,9 @@ func main() {
 	// Initialize a new instance of our application struct, containing the
 	// dependencies (for now, just the structured logger).
 	app := &application{
-		logger: logger,
+		logger:        logger,
+		snippet:       &models.SnippetModel{DB: db},
+		templateCache: templateCache,
 	}
 
 	// Register the two new handler functions and corresponding route patterns with
