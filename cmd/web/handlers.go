@@ -33,9 +33,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	// Use the new render helper.
-	app.render(w, r, http.StatusOK, "home.html", templateData{
-		Snippets: snippets,
-	})
+	app.render(w, r, http.StatusOK, "home.html", templateData{Snippets: snippets})
 
 	// // // Initialize a slice containing the paths to the two files. It's important
 	// // // to note that the file containing our base template must be the *first*
