@@ -20,7 +20,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Use the Header().Add() method to add a 'Server: Go' header to the
 	// response header map. The first parameter is the header name, and
 	// the second parameter is the header value.
-	w.Header().Add("Server", "Go")
+	//w.Header().Add("Server", "Go")
 
 	snippets, err := app.snippet.Latest()
 	if err != nil {
@@ -32,8 +32,14 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// 	fmt.Fprintf(w, "%v+\n", snippet)
 	// }
 
-	// Use the new render helper.
-	app.render(w, r, http.StatusOK, "home.html", templateData{Snippets: snippets})
+	// Call the newTemplateData() helper to get a templateData struct containing
+	// the 'default' data (which for now is just the current year), and add the
+	// snippets slice to it.
+	data := app.newTemplateData(r)
+	data.Snippets = snippets
+
+	// Pass the data to the render() helper as normal.
+	app.render(w, r, http.StatusOK, "home.html", data)
 
 	// // // Initialize a slice containing the paths to the two files. It's important
 	// // // to note that the file containing our base template must be the *first*
@@ -123,10 +129,12 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+	// And do the same thing again here...
+	data := app.newTemplateData(r)
+	data.Snippet = snippet
+
 	// Use the new render helper.
-	app.render(w, r, http.StatusOK, "view.html", templateData{
-		Snippet: snippet,
-	})
+	app.render(w, r, http.StatusOK, "view.html", data)
 
 	// files := []string{
 	// 	"./ui/html/base.html",
