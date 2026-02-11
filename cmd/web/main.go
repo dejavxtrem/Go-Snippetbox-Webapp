@@ -14,6 +14,7 @@ import (
 	// "{your-module-path}/internal/models". If you can't remember what module path you
 	// used, you can find it at the top of the go.mod file.
 	"github.com/dejavxtrem/snippetbox/internal/models"
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -23,6 +24,7 @@ type application struct {
 	logger        *slog.Logger
 	snippet       *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -66,12 +68,16 @@ func main() {
 	// before the main() function exits.
 	defer db.Close()
 
+	//Instance of formDecoder instance
+	formDecoder := form.NewDecoder()
+
 	// Initialize a new instance of our application struct, containing the
 	// dependencies (for now, just the structured logger).
 	app := &application{
 		logger:        logger,
 		snippet:       &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	// Register the two new handler functions and corresponding route patterns with

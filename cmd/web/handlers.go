@@ -5,10 +5,10 @@ import (
 	"fmt" // New import
 	"net/http"
 	"strconv"
-	"strings" // New import
-	"unicode/utf8"
 
+	// New import
 	"github.com/dejavxtrem/snippetbox/internal/models"
+	"github.com/dejavxtrem/snippetbox/internal/validator"
 )
 
 // Define a snippetCreateForm struct to represent the form data and validation
@@ -17,10 +17,15 @@ import (
 // must be exported in order to be read by the html/template package when
 // rendering the template.
 type snippetCreateForm struct {
-	Title       string
-	Content     string
-	Expires     int
-	FieldErrors map[string]string
+	Title   string `form:"title"`
+	Content string `form:"content"`
+	Expires int    `form:"expires"`
+	// Remove the explicit FieldErrors struct field and instead embed the Validator
+	// struct. Embedding this means that our snippetCreateForm "inherits" all the
+	// fields and methods of our Validator struct (including the FieldErrors field).
+	validator.Validator `form:"-"`
+	//FieldErrors map[string]string
+
 }
 
 // Define an application struct to hold the application-wide dependencies for the
@@ -205,12 +210,14 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 // POST
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	//use the method to customize() Method to send a 201 status code
+
+	// Declare a new empty instance of the snippetCreateForm struct.
+	var form snippetCreateForm
 
 	// title := "O snail"
 	// content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
 	// expires := 7
-	err := r.ParseForm()
+	err := app.decodeForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
@@ -226,11 +233,12 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	// represent it in our Go code as an integer. So we need to manually convert
 	// the form data to an integer using strconv.Atoi(), and send a 400 Bad
 	// Request response if the conversion fails.
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
+
+	// expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	// if err != nil {
+	// 	app.clientError(w, http.StatusBadRequest)
+	// 	return
+	// }
 
 	// Create an instance of the snippetCreateForm struct containing the values
 	// from the form and an empty map for any validation errors.
@@ -241,12 +249,12 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	// 	FieldErrors: map[string]string{},
 	// }
 
-	form := snippetCreateForm{
-		Title:       r.PostForm.Get("title"),
-		Content:     r.PostForm.Get("content"),
-		Expires:     expires,
-		FieldErrors: map[string]string{},
-	}
+	// form := snippetCreateForm{
+	// 	Title:   r.PostForm.Get("title"),
+	// 	Content: r.PostForm.Get("content"),
+	// 	Expires: expires,
+	// 	//FieldErrors: map[string]string{},
+	// }
 
 	// Initialize a map to hold any validation errors for the form fields.
 	//fieldErrors := make(map[string]string)
@@ -254,23 +262,46 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	// Check that the title value is not blank and is not more than 100
 	// characters long. If it fails either of those checks, add a message to the
 	// errors map using the field name as the key.
-	if strings.TrimSpace(form.Title) == "" {
-		form.FieldErrors["title"] = "The field cannot be blank"
+	// if strings.TrimSpace(form.Title) == "" {
+	// 	form.FieldErrors["title"] = "The field cannot be blank"
 
-	} else if utf8.RuneCountInString(form.Title) > 100 {
-		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
+	// } else if utf8.RuneCountInString(form.Title) > 100 {
+	// 	form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
+	// }
+
+	// // Check that the content value isn't blank.
+	// if strings.TrimSpace(form.Content) == "" {
+	// 	form.FieldErrors["content"] = "This field cannot be blank"
+	// }
+
+	// // Check the expires value matches one of the permitted values (1, 7 or
+	// // 365).
+	// if form.Expires != 1 && form.Expires != 7 && form.Expires != 365 {
+	// 	form.FieldErrors["expires"] = "This field must equal 1, 7 or 365"
+	// }
+
+	// Because the Validator struct is embedded by the snippetCreateForm struct,
+	// we can call CheckField() directly on it to execute our validation checks.
+	// CheckField() will add the provided key and error message to the
+	// FieldErrors map if the check does not evaluate to true. For example, in
+	// the first line here we "check that the form.Title field is not blank". In
+	// the second, we "check that the form.Title field has a maximum character
+	// length of 100" and so on.
+
+	// Call the Decode() method of the form decoder, passing in the current
+	// request and *a pointer* to our snippetCreateForm struct. This will
+	// essentially fill our struct with the relevant values from the HTML form.
+	// If there is a problem, we return a 400 Bad Request response to the client.
+	err = app.formDecoder.Decode(&form, r.PostForm)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
 	}
 
-	// Check that the content value isn't blank.
-	if strings.TrimSpace(form.Content) == "" {
-		form.FieldErrors["content"] = "This field cannot be blank"
-	}
-
-	// Check the expires value matches one of the permitted values (1, 7 or
-	// 365).
-	if form.Expires != 1 && form.Expires != 7 && form.Expires != 365 {
-		form.FieldErrors["expires"] = "This field must equal 1, 7 or 365"
-	}
+	// Then validate and use the data as normal...
+	form.CheckFields(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckFields(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long ")
+	form.CheckFields(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckFields(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
 
 	// If there are any errors, dump them in a plain-text HTTP response and
 	// return from the handler.
@@ -282,7 +313,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	//fmt.Printf("this is the form error title %+v\n", form.FieldErrors)
 
-	if len(form.FieldErrors) > 0 {
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 

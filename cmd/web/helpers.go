@@ -2,11 +2,43 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
 	"time"
+
+	"github.com/go-playground/form/v4"
 )
+
+// Create a new decodePostForm() helper method. The second parameter here, dst,
+// is the target destination into which we want to decode the form data.
+// func (app *application) decodePostForm(r *http.Request, dst any) error {
+// 	//Call ParseForm on the request, in the same way that we did in our
+// 	// snippetCreatePost handler.
+// 	err := r.ParseForm()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	// Call Decode() on our decoder instance, passing the target destination as
+// 	// the first parameter.
+// 	err = app.formDecoder.Decode(dst, r.PostForm)
+// 	if err != nil {
+// 		// If we try to use an invalid target destination, the Decode() method
+// 		// will return an error with the type form.InvalidDecoderError. We use
+// 		// errors.As() to check for this and panic. At the end of this chapter
+// 		// we'll talk about panicking versus returning errors, and discuss why
+// 		// it's an appropriate thing to do in this specific situation.
+// 		var invalidDecoderError *form.InvalidDecoderError
+// 		if errors.As(err, &invalidDecoderError) {
+// 			panic(err)
+// 		}
+// 		// For all other errors, return them as normal.
+// 		return err
+// 	}
+// 	return nil
+// }
 
 // Create a newTemplateData() helper, which returns a templateData struct
 // initialized with the current year. Note that we're not using the *http.Request
@@ -85,4 +117,35 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 	// 	app.serverError(w, r, err)
 	// }
 
+}
+
+// Create a new decodePostForm() helper method. The second parameter here, dst,
+// is the target destination into which we want to decode the form data.
+func (app *application) decodeForm(r *http.Request, dst any) error {
+	// Call ParseForm() on the request, in the same way that we did in our
+	// snippetCreatePost handler.
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	// Call Decode() on our decoder instance, passing the target destination as
+	// the first parameter.
+	err = app.formDecoder.Decode(dst, r.PostForm)
+	if err != nil {
+		// If we try to use an invalid target destination, the Decode() method
+		// will return an error with the type form.InvalidDecoderError. We use
+		// errors.As() to check for this and panic. At the end of this chapter
+		// we'll talk about panicking versus returning errors, and discuss why
+		// it's an appropriate thing to do in this specific situation.
+		var invalidDecoderError *form.InvalidDecoderError
+
+		if errors.As(err, &invalidDecoderError) {
+			panic(err)
+		}
+
+		return err
+	}
+
+	return nil
 }
