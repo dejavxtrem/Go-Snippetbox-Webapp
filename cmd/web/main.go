@@ -7,12 +7,15 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	// Import the models package that we just created. You need to prefix this with
 	// whatever module path you set up back in chapter 02.01 (Project Setup and Creating
 	// a Module) so that the import statement looks like this:
 	// "{your-module-path}/internal/models". If you can't remember what module path you
 	// used, you can find it at the top of the go.mod file.
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/dejavxtrem/snippetbox/internal/models"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
@@ -21,10 +24,11 @@ import (
 // Add a snippets field to the application struct. This will allow us to
 // use the SnippetModel type in our handlers.
 type application struct {
-	logger        *slog.Logger
-	snippet       *models.SnippetModel
-	templateCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	logger         *slog.Logger
+	snippet        *models.SnippetModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -71,13 +75,24 @@ func main() {
 	//Instance of formDecoder instance
 	formDecoder := form.NewDecoder()
 
+	// Use the scs.New() function to initialize a new session manager. Then we
+	// configure it to use our MySQL database as the session store, and set a
+	// lifetime of 12 hours (so that sessions automatically expire 12 hours
+	// after first being created).
+	sessionManger := scs.New()
+	sessionManger.Store = mysqlstore.New(db)
+	sessionManger.Lifetime = 12 * time.Hour
+
+	//And  the session manager to our application dependencies
+
 	// Initialize a new instance of our application struct, containing the
 	// dependencies (for now, just the structured logger).
 	app := &application{
-		logger:        logger,
-		snippet:       &models.SnippetModel{DB: db},
-		templateCache: templateCache,
-		formDecoder:   formDecoder,
+		logger:         logger,
+		snippet:        &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManger,
 	}
 
 	// Register the two new handler functions and corresponding route patterns with

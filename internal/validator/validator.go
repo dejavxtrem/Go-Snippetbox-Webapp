@@ -8,17 +8,17 @@ import (
 
 // Define a new Validator struct which contains a map of validation error messages
 // for our form fields.
-type validator struct {
+type Validator struct {
 	FieldErrors map[string]string
 }
 
-func (v *validator) Valid() bool {
+func (v *Validator) Valid() bool {
 	return len(v.FieldErrors) == 0
 }
 
 // AddFieldError() adds an error message to the FieldErrors map (so long as no
 // entry already exists for the given key).
-func (v *validator) AddFieldError(key, message string) {
+func (v *Validator) AddFieldError(key, message string) {
 	// Note: We need to initialize the map first, if it isn't already
 	// initialized.
 	if v.FieldErrors == nil {
@@ -32,14 +32,14 @@ func (v *validator) AddFieldError(key, message string) {
 
 // CheckField() adds an error message to the FieldErrors map only if a
 // validation check is not 'ok'.
-func (v *validator) CheckFields(ok bool, key, message string) {
+func (v *Validator) CheckFields(ok bool, key, message string) {
 	if !ok {
 		v.AddFieldError(key, message)
 	}
 }
 
 // NotBlank() returns true if a value is not an empty string.
-func NotBlanc(value string) bool {
+func NotBlank(value string) bool {
 	return strings.TrimSpace(value) != ""
 }
 
