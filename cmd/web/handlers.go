@@ -152,14 +152,14 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	// PopString() also deletes the key and value from the session data, so it
 	// behaves like a one-time fetch. If there is no matching key in the session
 	// data this will return the empty string.
-	flash := app.sessionManager.PopString(r.Context(), "flash")
+	//flash := app.sessionManager.PopString(r.Context(), "flash")
 
 	// And do the same thing again here...
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
 
 	// Pass the flash message to the template.
-	data.Flash = flash
+	//data.Flash = flash
 	// Use the new render helper.
 	app.render(w, r, http.StatusOK, "view.html", data)
 

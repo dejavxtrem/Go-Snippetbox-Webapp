@@ -46,6 +46,7 @@ import (
 func (app *application) newTemplateData(r *http.Request) templateData {
 	return templateData{
 		CurrentYear: time.Now().Year(),
+		Flash:       app.sessionManager.PopString(r.Context(), "flash"),
 	}
 }
 
@@ -99,6 +100,9 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 		app.serverError(w, r, err)
 		return
 	}
+
+	// Deliberate error: set a Content-Length header with an invalid (non-integer)
+	// value.
 
 	// If the template is written to the buffer without any errors, it's safe
 	// to go ahead and write the HTTP status code to http.ResponseWriter.

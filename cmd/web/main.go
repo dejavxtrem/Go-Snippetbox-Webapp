@@ -117,18 +117,30 @@ func main() {
 	// //The Post Request Handler
 	// mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
-	//log.Printf("Starting server on port on %s", *addr)
-	// Use the Info() method to log the starting server message at Info severity
-	// (along with the listen address as an attribute).
-	logger.Info("Starting server", slog.Any("addr", *addr))
-
 	// Call the new app.routes() method to get the servemux containing our routes,
 	// and pass that to http.ListenAndServe().
 
 	// Because the err variable is now already declared in the code above, we need
 	// to use the assignment operator = here, instead of the := 'declare and assign'
 	// operator.
-	err = http.ListenAndServe(*addr, app.routes())
+	//err = http.ListenAndServe(*addr, app.routes())
+
+	// Initialize a new http.Server struct. We set the Addr and Handler fields so
+	// that the server uses the same network address and routes as before.
+	srv := &http.Server{
+		Addr:     *addr,
+		Handler:  app.routes(),
+		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+	}
+
+	//log.Printf("Starting server on port on %s", *addr)
+	// Use the Info() method to log the starting server message at Info severity
+	// (along with the listen address as an attribute).
+	logger.Info("Starting server", slog.Any("addr", srv.Addr))
+
+	// Call the ListenAndServe() method on our new http.Server struct to start
+	// the server.
+	err = srv.ListenAndServe()
 
 	//log.Fatal(err)
 	logger.Error(err.Error())
