@@ -140,7 +140,10 @@ func main() {
 
 	// Call the ListenAndServe() method on our new http.Server struct to start
 	// the server.
-	err = srv.ListenAndServe()
+	// Use the ListenAndServeTLS() method to start the HTTPS server. We
+	// pass in the paths to the TLS certificate and corresponding private key as
+	// the two parameters.
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 
 	//log.Fatal(err)
 	logger.Error(err.Error())
