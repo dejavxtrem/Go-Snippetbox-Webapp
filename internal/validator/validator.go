@@ -14,10 +14,14 @@ type Validator struct {
 	NonFieldErrors []string
 }
 
+// Update the Valid() method to also check that the NonFieldErrors slice is
+// empty.
 func (v *Validator) Valid() bool {
 	return len(v.FieldErrors) == 0 && len(v.NonFieldErrors) == 0
 }
 
+// Create an AddNonFieldError() helper for adding error messages to the new
+// NonFieldErrors slice.
 func (v *Validator) AddNonFieldError(message string) {
 	v.NonFieldErrors = append(v.NonFieldErrors, message)
 }

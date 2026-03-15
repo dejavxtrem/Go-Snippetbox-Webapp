@@ -153,3 +153,9 @@ func (app *application) decodeForm(r *http.Request, dst any) error {
 
 	return nil
 }
+
+// Return true if the current request is from an authenticated user, otherwise
+// return false.
+func (app *application) isAutheticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+}
