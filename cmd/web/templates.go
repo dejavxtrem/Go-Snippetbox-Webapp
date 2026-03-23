@@ -2,10 +2,12 @@ package main
 
 import (
 	"html/template" // New import
+	"io/fs"         // New import
 	"path/filepath" // New import
 	"time"          // New import
 
 	"github.com/dejavxtrem/snippetbox/internal/models"
+	"github.com/dejavxtrem/snippetbox/ui"
 )
 
 // Define a templateData type to act as the holding structure for
@@ -44,7 +46,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	// us a slice of all the filepaths for our application 'page' templates
 	// like [ui/html/pages/home.tmpl ui/html/pages/view.tmpl]
 
-	pages, err := filepath.Glob("./ui/html/pages/*.html")
+	pages, err := fs.Glob(ui.Files, "html/pages/*.html")
 
 	if err != nil {
 		return nil, err
@@ -56,11 +58,23 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// and assign it to the name variable.
 		name := filepath.Base(page)
 
+		// Create a slice containing the filepath patterns for the templates we
+		// want to parse.
+		patterns := []string{
+			"html/base.html",
+			"html/partials/*.html",
+			page,
+		}
+
 		// The template.FuncMap must be registered with the template set before you
 		// call the ParseFiles() method. This means we have to use template.New() to
 		// create an empty template set, use the Funcs() method to register the
 		// template.FuncMap, and then parse the file as normal.
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.html")
+		//  ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.html")
+
+		// Use ParseFS() instead of ParseFiles() to parse the template files
+		// from the ui.Files embedded filesystem.
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
 
 		/// Parse the base template file into a template set.
 		//ts, err := template.ParseFiles("./ui/html/base.html")
@@ -68,11 +82,11 @@ func newTemplateCache() (map[string]*template.Template, error) {
 			return nil, err
 		}
 
-		// Call ParseGlob() *on this template set* to add any partials.
-		ts, err = ts.ParseGlob("./ui/html/partials/*.html")
-		if err != nil {
-			return nil, err
-		}
+		// // Call ParseGlob() *on this template set* to add any partials.
+		// ts, err = ts.ParseGlob("./ui/html/partials/*.html")
+		// if err != nil {
+		// 	return nil, err
+		// }
 
 		// // Create a slice containing the filepaths for our base template, any
 		// // partials and the page.
@@ -82,11 +96,11 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// 	page,
 		// }
 
-		// Parse the files into a template set.
-		ts, err = ts.ParseFiles(page)
-		if err != nil {
-			return nil, err
-		}
+		// // Parse the files into a template set.
+		// ts, err = ts.ParseFiles(page)
+		// if err != nil {
+		// 	return nil, err
+		// }
 
 		// Add the template set to the map, using the name of the page
 		// (like 'home.tmpl') as the key.
