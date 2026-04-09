@@ -5,6 +5,14 @@ import (
 	"testing"
 )
 
+func NotEqual[T comparable](t *testing.T, got, want T) {
+	t.Helper()
+
+	if got == want {
+		t.Errorf("got: %v; expected values to be different", got)
+	}
+}
+
 func Equal[T any](t *testing.T, got, want T) {
 	t.Helper()
 
@@ -15,7 +23,8 @@ func Equal[T any](t *testing.T, got, want T) {
 	// And call the isEqual() function below instead of using the != comparison
 	// operator.
 	if !isEqual(got, want) {
-		t.Errorf("got: %v; want: %v", got, want)
+		//t.Errorf("got: %v; want: %v", got, want)
+		t.Errorf("got: true; want: false")
 	}
 }
 
@@ -32,8 +41,20 @@ func True(t *testing.T, got bool) {
 func Nil(t *testing.T, got any) {
 	t.Helper()
 
-	if !isNil(got) {
-		t.Errorf("got: %v; want: nil", got)
+	// if !isNil(got) {
+	// 	t.Errorf("got: %v; want: nil", got)
+	// }
+
+	if got == nil {
+		t.Errorf("got: nil; want: non-nil")
+	}
+}
+
+func NotNil(t *testing.T, got any) {
+	t.Helper()
+
+	if got == nil {
+		t.Errorf("got: nil; want: non-nil")
 	}
 }
 

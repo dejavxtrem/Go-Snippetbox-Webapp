@@ -26,11 +26,11 @@ import (
 // use the SnippetModel type in our handlers.
 type application struct {
 	logger         *slog.Logger
-	snippet        *models.SnippetModel
+	snippet        models.SnippetModelInterface
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
-	users          *models.UserModel
+	users          models.UserModelInterface
 }
 
 func main() {
